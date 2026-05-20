@@ -18,7 +18,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { version = "1.0.56", features = ["backtrace"] }
 clap = { version = "4.0.22", features = ["derive", "env"] }
-arti-client = { version = "0.42", default-features = false, features = ["tokio","rustls", "static-sqlite", "compression", "accel-openssl"] }
+arti-client = { version = "0.42", default-features = false, features = ["tokio","rustls", "static-sqlite", "compression", "accel-openssl","vanguards"] }
 tor-rtcompat = { version = "0.42", default-features = false, features = ["tokio", "rustls"] }
 dashmap = "5.2.0"
 fastrand = "1.9.0"
