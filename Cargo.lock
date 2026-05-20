@@ -85,6 +85,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "anon-bore"
+version = "0.6.1"
+dependencies = [
+ "anyhow",
+ "arti-client",
+ "clap",
+ "dashmap",
+ "fastrand 1.9.0",
+ "futures-util",
+ "hex",
+ "hmac",
+ "lazy_static",
+ "openssl-sys",
+ "rstest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "tokio-util",
+ "tor-rtcompat",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "anstream"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -388,32 +414,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "bore-cli"
-version = "0.6.0"
-dependencies = [
- "anyhow",
- "arti-client",
- "clap",
- "dashmap",
- "fastrand 1.9.0",
- "futures-util",
- "hex",
- "hmac",
- "lazy_static",
- "openssl-sys",
- "rstest",
- "serde",
- "serde_json",
- "sha2",
- "tokio",
- "tokio-util",
- "tor-rtcompat",
- "tracing",
- "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]

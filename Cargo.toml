@@ -1,7 +1,7 @@
 [package]
-name = "bore-cli"
-version = "0.6.0"
-authors = ["Eric Zhang <ekzhang1@gmail.com>"]
+name = "anon-bore"
+version = "0.6.1"
+#authors = ["Eric Zhang <ekzhang1@gmail.com>"]
 license = "MIT"
 description = "A modern, simple TCP tunnel in Rust that exposes local ports to a remote server, bypassing standard NAT connection firewalls."
 repository = "https://github.com/ekzhang/bore"
