@@ -1,9 +1,12 @@
-//! Client implementation for the `bore` service.
-
 use std::sync::Arc;
+use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
-use tokio::{io::AsyncWriteExt, net::TcpStream, time::timeout};
+use anyhow::{bail, Context as AnyContext, Result};
+use arti_client::{DataStream, TorClient, TorClientConfig};
+use tokio::io::AsyncWriteExt;
+use tokio::net::TcpStream;
+use tokio::time::timeout;
+use tor_rtcompat::PreferredRuntime;
 use tracing::{error, info, info_span, warn, Instrument};
 use uuid::Uuid;
 
@@ -13,12 +16,12 @@ use crate::shared::{ClientMessage, Delimited, ServerMessage, CONTROL_PORT, NETWO
 /// State structure for the client.
 pub struct Client {
     /// Control connection to the server.
-    conn: Option<Delimited<TcpStream>>,
+    conn: Option<Delimited<DataStream>>,
 
     /// Destination address of the server.
     to: String,
 
-    // Local host that is forwarded.
+    /// Local host that is forwarded.
     local_host: String,
 
     /// Local port that is forwarded.
@@ -29,7 +32,12 @@ pub struct Client {
 
     /// Optional secret used to authenticate clients.
     auth: Option<Authenticator>,
+
+    /// Tor client for anonymized connections to the remote server.
+    tor_client: TorClient<PreferredRuntime>,
 }
+
+const REMOTE_TIMEOUT: Duration = Duration::from_secs(10);
 
 impl Client {
     /// Create a new client.
@@ -40,7 +48,14 @@ impl Client {
         port: u16,
         secret: Option<&str>,
     ) -> Result<Self> {
-        let mut stream = Delimited::new(connect_with_timeout(to, CONTROL_PORT).await?);
+        info!("bootstrapping Tor client");
+        let tor_config = TorClientConfig::default();
+        let tor_client = TorClient::create_bootstrapped(tor_config)
+            .await
+            .context("failed to bootstrap Tor client")?;
+
+        let stream = connect_remote(&tor_client, to, CONTROL_PORT).await?;
+        let mut stream = Delimited::new(stream);
         let auth = secret.map(Authenticator::new);
         if let Some(auth) = &auth {
             auth.client_handshake(&mut stream).await?;
@@ -66,6 +81,7 @@ impl Client {
             local_port,
             remote_port,
             auth,
+            tor_client,
         })
     }
 
@@ -103,25 +119,36 @@ impl Client {
     }
 
     async fn handle_connection(&self, id: Uuid) -> Result<()> {
-        let mut remote_conn =
-            Delimited::new(connect_with_timeout(&self.to[..], CONTROL_PORT).await?);
+        let stream = connect_remote(&self.tor_client, &self.to, CONTROL_PORT).await?;
+        let mut remote_conn = Delimited::new(stream);
         if let Some(auth) = &self.auth {
             auth.client_handshake(&mut remote_conn).await?;
         }
         remote_conn.send(ClientMessage::Accept(id)).await?;
-        let mut local_conn = connect_with_timeout(&self.local_host, self.local_port).await?;
+        let mut local_conn = connect_local(&self.local_host, self.local_port).await?;
         let mut parts = remote_conn.into_parts();
         debug_assert!(parts.write_buf.is_empty(), "framed write buffer not empty");
-        local_conn.write_all(&parts.read_buf).await?; // mostly of the cases, this will be empty
+        local_conn.write_all(&parts.read_buf).await?;
         tokio::io::copy_bidirectional(&mut local_conn, &mut parts.io).await?;
         Ok(())
     }
 }
 
-async fn connect_with_timeout(to: &str, port: u16) -> Result<TcpStream> {
-    match timeout(NETWORK_TIMEOUT, TcpStream::connect((to, port))).await {
+pub(crate) async fn connect_remote(
+    tor_client: &TorClient<PreferredRuntime>,
+    to: &str,
+    port: u16,
+) -> Result<DataStream> {
+    timeout(REMOTE_TIMEOUT, tor_client.connect((to, port)))
+        .await
+        .context("timed out connecting via Tor")?
+        .with_context(|| format!("could not connect to {to}:{port} via Tor"))
+}
+
+pub(crate) async fn connect_local(host: &str, port: u16) -> Result<TcpStream> {
+    match timeout(NETWORK_TIMEOUT, TcpStream::connect((host, port))).await {
         Ok(res) => res,
         Err(err) => Err(err.into()),
     }
-    .with_context(|| format!("could not connect to {to}:{port}"))
+    .with_context(|| format!("could not connect to {host}:{port}"))
 }

@@ -24,7 +24,7 @@ enum Command {
         local_host: String,
 
         /// Address of the remote server to expose local ports to.
-        #[clap(short, long, env = "BORE_SERVER")]
+        #[clap(short, long, env = "BORE_SERVER", default_value = "bore.pub")]
         to: String,
 
         /// Optional port on the remote server to select.
