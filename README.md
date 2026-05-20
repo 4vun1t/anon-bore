@@ -1,5 +1,8 @@
-# bore
 
+# anon-bore
+Anonymous fork of `bore`, using `arti-client` for publishing ports over `tor`
+
+# bore
 [![Build status](https://img.shields.io/github/actions/workflow/status/ekzhang/bore/ci.yml)](https://github.com/ekzhang/bore/actions)
 [![Crates.io](https://img.shields.io/crates/v/bore-cli.svg)](https://crates.io/crates/bore-cli)
 
