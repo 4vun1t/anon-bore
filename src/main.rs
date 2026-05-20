@@ -1,7 +1,7 @@
 use std::net::IpAddr;
 
 use anyhow::Result;
-use bore_cli::{client::Client, server::Server};
+use anon_bore::{client::Client, server::Server};
 use clap::{error::ErrorKind, CommandFactory, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
